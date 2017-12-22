@@ -45,6 +45,22 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 	return row
 }
 
+var convert_reply_to_sexp = (reply) => {
+	switch(reply.type) {
+	case 'error':
+			return `(error ${reply.errno} "${reply.message}")`
+			break
+	case 'ok':
+			return 'ok'
+			break
+	case 'dataset':
+			var fields = reply.fields.map(s => `"${s}"`).join(" ")
+			var rows = reply.rows.map(r => "(" + r.map(e => `"${e}"`) + ")" ).join(" ")
+			return `(dataset (${fields}) (${rows}))`
+			break
+	}
+}
+
 var print_wait_dbquery_request = (format, connection_name, query, reply) => {
 	switch(format) {
 	case 'xml':
@@ -57,7 +73,7 @@ var print_wait_dbquery_request = (format, connection_name, query, reply) => {
 	case 'sexp':
 		print('\t\t(WaitRequest')
 		print('\t\t\t(DbQuery ' + `"${connection_name}" "${query}"` + ')')
-		print('\t\t\t(Reply ' + `"TO_BE_DONE"` + ')')
+		print('\t\t\t(Reply ' + convert_reply_to_sexp(reply) + ')')
 		print('\t\t)')
 		break
 	}
