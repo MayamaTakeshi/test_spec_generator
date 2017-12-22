@@ -66,7 +66,7 @@ var print_wait_dbquery_request = (format, connection_name, query, reply) => {
 
 module.exports = {
 	setup: (format, db_connections, ready_cb, query_cb, http_cb) => {
-		if(!['xml', 'sexp'].includes('format')) throw `Invalid format ${format}`
+		if(!['xml', 'sexp'].includes(format)) throw `Invalid format ${format}`
 
 		mqc.setup(db_connections, 
 			() => {
