@@ -1,0 +1,14 @@
+{
+  "name": "test_spec_genarator",
+  "version": "1.0.0",
+  "description": "A simple test spec generation library based on MySQL queries and HTTP API calls.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "MayamaTakeshi <mayamatakeshi@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "mysql_query_collector": "https://github.com/MayamaTakeshi/mysql_query_collector"
+  }
+}
