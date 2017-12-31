@@ -1,4 +1,17 @@
-var mqc = require('mysql_query_collector')
+const mqc = require('mysql_query_collector')
+const http = require('http')
+const textBody = require('body')
+const anyBody = require('body/any')
+
+const m = require('data-matching');
+
+const _ = require('lodash')
+
+
+const _collected_data = {}
+
+const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
+
 
 var debug_print = (s) => {
 	console.error(s)
@@ -45,7 +58,7 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 	return row
 }
 
-var convert_reply_to_sexp = (reply) => {
+var convert_dbquery_reply_to_sexp = (reply) => {
 	switch(reply.type) {
 	case 'error':
 			return `(error ${reply.errno} "${reply.message}")`
@@ -61,51 +74,119 @@ var convert_reply_to_sexp = (reply) => {
 	}
 }
 
-var print_wait_dbquery_request = (format, connection_name, query, reply) => {
+var print_wait_dbquery_request = (format, server_name, query, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
 		print(`<WaitRequest>`)
-		print(`<DbQuery connection_name="${connection_name}">${query}</DbQuery>`)
+		print(`<DbQuery server_name="${server_name}">${query}</DbQuery>`)
 		print(`<Reply>${JSON.stringify(reply)}</Reply>`)
 		print(`</WaitRequest>`)
 		break
 	case 'sexp':
 		print('\t\t(WaitRequest')
-		print('\t\t\t(DbQuery ' + `"${connection_name}" "${query}"` + ')')
-		print('\t\t\t(Reply ' + convert_reply_to_sexp(reply) + ')')
+		print('\t\t\t(DbQuery ' + `"${server_name}" "${query}"` + ')')
+		print('\t\t\t(Reply ' + convert_dbquery_reply_to_sexp(reply) + ')')
 		print('\t\t)')
 		break
 	}
 }
 
+var serialize_body = (content_type, body) => {
+	if(!body) return ''
+
+	switch(content_type) {
+	case 'application/json':
+	case 'application/x-www-form-urlencoded':
+		return JSON.stringify(body)
+	default:
+		return body
+	}
+}
+
+var print_wait_http_request = (format, server, req, body, reply) => {
+	var b = serialize_body(req.headers['content-type'], body)
+
+	switch(format) {
+	case 'xml':
+		print('')
+		print(`<WaitRequest>
+<HttpRequest server_name="${server.name}">
+<Url>${req.url}</Url>
+<Method>${req.method}</Method>
+<Headers>${JSON.stringify(req.headers)}</Headers>
+<Body>${b}</Body>
+</HttpRequest>
+<Reply>${JSON.stringify(reply)}</Reply>
+</WaitRequest>`)
+		break
+	}
+}
+
+var send_http_reply = (res, reply) => {
+	res.writeHead(reply.status, reply.headers)
+	if(_.some(reply.headers, (v,k) => v.toLowerCase() == 'application/json')) {
+		res.end(JSON.stringify(reply.body))
+	} else {
+		res.end(reply.body)
+	}
+}
+
+var process_http_request = (format, server, req, res, body) => {
+	var reply = _.find(server.replies, (reply) => {
+		return m.partial_match(reply.expect)(req, _collected_data)
+	})
+	if(reply) {
+		reply = reply.data
+	} else {
+		reply = {
+			status: 200,
+		}
+	}
+	print_wait_http_request(format, server, req, body, reply)
+	send_http_reply(res, reply)
+}
+
 
 module.exports = {
-	setup: (format, db_connections, ready_cb, query_cb, http_cb) => {
+	setup: (format, servers, ready_cb, query_cb, http_cb) => {
 		if(!['xml', 'sexp'].includes(format)) throw `Invalid format ${format}`
 
-		mqc.setup(db_connections, 
-			() => {
+		var mysql_servers = servers.filter(s => s.type == 'mysql')
+
+		var http_servers = servers.filter(s => s.type == 'http')
+
+		var ready_servers = 0;
+
+		var check_ready = (c) => {
+			ready_servers += c
+			if(ready_servers == servers.length) {
 				ready_cb()
+			}
+		}
+
+		mqc.setup(mysql_servers, 
+			() => {
+				check_ready(mysql_servers.length)
 			},
-			(conn, connection_name, query) => {
-				//debug_print(`connection ${connection_name} got query: ${query}`)
+			(conn, server_name, query) => {
+				//debug_print(`Simulated MySQL server ${server_name} got query: ${query}`)
 
 				var q = query.trim().toLowerCase().replace(/\s\s+/g, ' ')
 
 				var command = q.split(" ")[0]
 				//debug_print(`command=${command}`)
 
-				var reply = query_cb(conn, connection_name, query);
+				var reply = query_cb(conn, server_name, query);
 				if(reply) {
-					print_wait_dbquery_request(format, connection_name, query, reply)
+					print_wait_dbquery_request(format, server_name, query, reply)
 					return reply
 				} else {
 					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback'].includes(command)) {
 						reply = {
 							type: 'ok',
 						}
-						print_wait_dbquery_request(format, connection_name, query, reply)
+						print_wait_dbquery_request(format, server_name, query, reply)
 						return reply
 					} else if (command == "select") {
 						var fields = get_select_fields(q)
@@ -116,7 +197,7 @@ module.exports = {
 							fields: fields,
 							rows: [gen_fake_row(id_field, id_value, fields)],
 						}	
-						print_wait_dbquery_request(format, connection_name, query, reply)
+						print_wait_dbquery_request(format, server_name, query, reply)
 						return reply
 					} else {
 						debug_print(`Unexpected query`)
@@ -125,6 +206,35 @@ module.exports = {
 				}
 			}
 		)
+
+		http_servers.forEach(server => {
+			var s = http.createServer((req, res) => {
+				if(req.headers['content-type'] == 'plain/text') {
+					textBody(req, res, {}, (err, body) => {
+						if(err) throw err
+						process_http_request(format, server, req, res, body)
+					})
+				} else if(PARSEABLE_CONTENT_TYPES.includes(req.headers['content-type'])) {
+					anyBody(req, res, {}, (err, body) => {
+						if(err) throw err
+						process_http_request(format, server, req, res, body) 
+					})
+				} else {
+					process_http_request(format, server, req, res, null)
+				}
+			})
+			s.listen({
+				host: server.address,
+				port: server.port,
+			})
+			s.on('error', function (e) {
+				throw e
+			});
+			s.on('listening', function (e) {
+				debug_print(`HTTP server ${server.name} created. Listening ${server.host}:${server.port}`)
+				check_ready(1)
+			});
+		})
 	},
 }
 
