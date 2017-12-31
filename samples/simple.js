@@ -31,6 +31,7 @@ format = process.argv[2]
 
 const MYSQL_PORT = 6000
 const HTTP_PORT  = 6001
+const UDP_PORT  = 6002
 
 var servers = [
 	{	
@@ -73,6 +74,18 @@ var servers = [
 
 		]
 	},
+	{
+		name: "udp_server1",
+		type: "udp",
+		host: "127.0.0.1",
+		port: UDP_PORT,
+		replies: [
+			{
+				expect: "sip:!{name}@!{domain}",
+				data: "${name} at ${domain}",
+			}
+		]
+	},
 ]
 
 
@@ -102,7 +115,7 @@ tsg.setup(format,
 		})
 
 	},
-	(conn, connection_name, query) => {
+	(conn, server_name, query) => {
 		return null;
 	},
 	() => {
