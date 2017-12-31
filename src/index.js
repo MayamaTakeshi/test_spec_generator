@@ -7,6 +7,8 @@ const m = require('data-matching');
 
 const _ = require('lodash')
 
+const atom = require('sexp_builder').atom
+const build_sexp = require('sexp_builder').build
 
 const _collected_data = {}
 
@@ -61,15 +63,13 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 var convert_dbquery_reply_to_sexp = (reply) => {
 	switch(reply.type) {
 	case 'error':
-			return `(error ${reply.errno} "${reply.message}")`
+			return build_sexp([atom('error'), reply.errno, reply.message])
 			break
 	case 'ok':
 			return 'ok'
 			break
 	case 'dataset':
-			var fields = reply.fields.map(s => `"${s}"`).join(" ")
-			var rows = reply.rows.map(r => "(" + r.map(e => `"${e}"`) + ")" ).join(" ")
-			return `(dataset (${fields}) (${rows}))`
+			return build_sexp([atom('dataset'), reply.fields, reply.rows])
 			break
 	}
 }
@@ -84,16 +84,21 @@ var print_wait_dbquery_request = (format, server_name, query, reply) => {
 		print(`</WaitRequest>`)
 		break
 	case 'sexp':
-		print('\t\t(WaitRequest')
-		print('\t\t\t(DbQuery ' + `"${server_name}" "${query}"` + ')')
-		print('\t\t\t(Reply ' + convert_dbquery_reply_to_sexp(reply) + ')')
-		print('\t\t)')
+		print('')
+		print(build_sexp([
+			atom('WaitRequest'),
+			[
+				atom('DbQuery'),
+				server_name,
+				query
+			],
+			[
+				atom('Reply'),
+				reply 
+			]
+		]))
 		break
 	}
-}
-
-var stringify_and_escape = (o) => {
-	return JSON.stringify(o).replace(/"/g, '\\"')
 }
 
 var print_wait_http_request = (format, server, request, reply) => {
@@ -106,10 +111,19 @@ var print_wait_http_request = (format, server, request, reply) => {
 </WaitRequest>`)
 		break
 	case 'sexp':
-		print(`\t\t(WaitRequest
-\t\t\t(HttpRequest "${server.name}" "${stringify_and_escape(request)}")
-\t\t\t(Reply "${stringify_and_escape(reply)}")
-\t\t)`)
+		print('')
+		print(build_sexp([
+			atom('WaitRequest'), 
+			[
+				atom('HttpRequest'),
+				server.name,
+				request
+			],
+			[
+				atom('Reply'),
+				reply
+			]
+		]))
 		break
 	}
 }

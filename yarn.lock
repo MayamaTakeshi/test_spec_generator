@@ -2285,6 +2285,10 @@ set-blocking@^2.0.0, set-blocking@~2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/set-blocking/-/set-blocking-2.0.0.tgz#045f9782d011ae9a6803ddd382b24392b3d890f7"
 
+sexp_builder@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/sexp_builder/-/sexp_builder-1.0.0.tgz#959bf3c13058224834929c16912384a8f9d4397a"
+
 shebang-command@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/shebang-command/-/shebang-command-1.2.0.tgz#44aac65b695b03398968c39f363fee5deafdf1ea"
