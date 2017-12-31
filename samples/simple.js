@@ -117,8 +117,6 @@ tsg.setup(format,
 	},
 	(conn, server_name, query) => {
 		return null;
-	},
-	() => {
 	}
 )
 

@@ -83,15 +83,15 @@ var print_wait_dbquery_request = (format, server_name, query, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
-		print(`<WaitRequest>`)
+		print(`<WaitAndReply>`)
 		print(`<DbQuery server_name="${server_name}">${query}</DbQuery>`)
 		print(`<Reply>${JSON.stringify(reply)}</Reply>`)
-		print(`</WaitRequest>`)
+		print(`</WaitAndReply>`)
 		break
 	case 'sexp':
 		print('')
 		print(build_sexp([
-			atom('WaitRequest'),
+			atom('WaitAndReply'),
 			[
 				atom('DbQuery'),
 				server_name,
@@ -110,15 +110,15 @@ var print_wait_http_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
-		print(`<WaitRequest>
+		print(`<WaitAndReply>
 <HttpRequest server_name="${server.name}">${JSON.stringify(request)}</HttpRequest>
 <Reply>${JSON.stringify(reply)}</Reply>
-</WaitRequest>`)
+</WaitAndReply>`)
 		break
 	case 'sexp':
 		print('')
 		print(build_sexp([
-			atom('WaitRequest'), 
+			atom('WaitAndReply'), 
 			[
 				atom('HttpRequest'),
 				server.name,
@@ -169,15 +169,15 @@ var print_wait_udp_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
-		print(`<WaitRequest>
+		print(`<WaitAndReply>
 <UdpRequest server_name="${server.name}">${request}</UdpRequest>
 <Reply>${reply}</Reply>
-</WaitRequest>`)
+</WaitAndReply>`)
 		break
 	case 'sexp':
 		print('')
 		print(build_sexp([
-			atom('WaitRequest'), 
+			atom('WaitAndReply'), 
 			[
 				atom('UdpRequest'),
 				server.name,
@@ -225,7 +225,7 @@ var process_udp_request = (format, server, socket, rinfo, msg) => {
 
 
 module.exports = {
-	setup: (format, servers, ready_cb, query_cb, http_cb) => {
+	setup: (format, servers, ready_cb, dbquery_cb) => {
 		if(!['xml', 'sexp'].includes(format)) throw `Invalid format ${format}`
 
 		var mysql_servers = servers.filter(s => s.type == 'mysql')
@@ -255,7 +255,7 @@ module.exports = {
 				var command = q.split(" ")[0]
 				//debug_print(`command=${command}`)
 
-				var reply = query_cb(conn, server_name, query);
+				var reply = dbquery_cb(conn, server_name, query);
 				if(reply) {
 					print_wait_dbquery_request(format, server_name, query, reply)
 					return reply
