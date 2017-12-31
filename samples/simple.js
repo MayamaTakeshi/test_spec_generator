@@ -81,8 +81,8 @@ var servers = [
 		port: UDP_PORT,
 		replies: [
 			{
-				expect: "sip:!{name}@!{domain}",
-				data: "${name} at ${domain}",
+				expect: "!{name}@!{domain}",
+				data: "'${name}' at '${domain}'",
 			}
 		]
 	},
