@@ -13,6 +13,7 @@
     "data-matching": "^1.6.0",
     "lodash": "^4.17.4",
     "mysql_query_collector": "https://github.com/MayamaTakeshi/mysql_query_collector",
-    "sexp_builder": "^1.0.0"
+    "sexp_builder": "^1.0.0",
+    "traverse-template": "^1.0.0"
   }
 }

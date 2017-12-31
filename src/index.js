@@ -14,6 +14,8 @@ const _collected_data = {}
 
 const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
 
+const traverseTemplate = require('traverse-template')
+
 
 var debug_print = (s) => {
 	console.error(s)
@@ -129,6 +131,8 @@ var print_wait_http_request = (format, server, request, reply) => {
 }
 
 var send_http_reply = (res, reply) => {
+	traverseTemplate(reply, _collected_data)
+
 	res.writeHead(reply.status, reply.headers)
 	if(_.some(reply.headers, (v,k) => v.toLowerCase() == 'application/json')) {
 		res.end(JSON.stringify(reply.body))
@@ -152,6 +156,8 @@ var process_http_request = (format, server, req, res, body) => {
 		request = r.expect
 	}
 	print_wait_http_request(format, server, request, reply)
+
+	// This must be done after print_wait_http_request as reply will be modified by send_http_reply 
 	send_http_reply(res, reply)
 }
 

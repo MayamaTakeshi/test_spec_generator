@@ -47,7 +47,7 @@ var servers = [
 		replies: [
 			{
 				expect: {
-					url: '/blablabla',
+					url: '/blablabla?id=!{id}',
 				},
 				data: {
 					status: 200,
@@ -55,7 +55,7 @@ var servers = [
 						'Content-Type': 'application/json',
 					},
 					body: {
-						id: 10,
+						id: '${id}',
 						name: 'aaa',
 					},
 				}
