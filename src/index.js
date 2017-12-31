@@ -92,6 +92,10 @@ var print_wait_dbquery_request = (format, server_name, query, reply) => {
 	}
 }
 
+var stringify_and_escape = (o) => {
+	return JSON.stringify(o).replace(/"/g, '\\"')
+}
+
 var print_wait_http_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
@@ -100,6 +104,12 @@ var print_wait_http_request = (format, server, request, reply) => {
 <HttpRequest server_name="${server.name}">${JSON.stringify(request)}</HttpRequest>
 <Reply>${JSON.stringify(reply)}</Reply>
 </WaitRequest>`)
+		break
+	case 'sexp':
+		print(`\t\t(WaitRequest
+\t\t\t(HttpRequest "${server.name}" "${stringify_and_escape(request)}")
+\t\t\t(Reply "${stringify_and_escape(reply)}")
+\t\t)`)
 		break
 	}
 }

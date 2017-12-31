@@ -88,14 +88,14 @@ tsg.setup(format,
 		sync_db_conn.query('select id, name from user', (err) => {
 			if(err) throw err
 
-			console.log("sending POST request")
+			console.error("Sending POST request")
 			var r = request.post(
 				`http://127.0.0.1:${HTTP_PORT}/find?name=bla&section=ble`,
 				//{ json: { key: 'value' } },
 				{ 'form': {"name": "bla bla bla" }},
 				function (error, response, body) {
 					if (!error && response.statusCode == 200) {
-						console.log(body)
+						console.debug(body)
 					}
 				}
 			);
