@@ -92,31 +92,12 @@ var print_wait_dbquery_request = (format, server_name, query, reply) => {
 	}
 }
 
-var serialize_body = (content_type, body) => {
-	if(!body) return ''
-
-	switch(content_type) {
-	case 'application/json':
-	case 'application/x-www-form-urlencoded':
-		return JSON.stringify(body)
-	default:
-		return body
-	}
-}
-
-var print_wait_http_request = (format, server, req, body, reply) => {
-	var b = serialize_body(req.headers['content-type'], body)
-
+var print_wait_http_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
 		print(`<WaitRequest>
-<HttpRequest server_name="${server.name}">
-<Url>${req.url}</Url>
-<Method>${req.method}</Method>
-<Headers>${JSON.stringify(req.headers)}</Headers>
-<Body>${b}</Body>
-</HttpRequest>
+<HttpRequest server_name="${server.name}">${JSON.stringify(request)}</HttpRequest>
 <Reply>${JSON.stringify(reply)}</Reply>
 </WaitRequest>`)
 		break
@@ -133,17 +114,20 @@ var send_http_reply = (res, reply) => {
 }
 
 var process_http_request = (format, server, req, res, body) => {
-	var reply = _.find(server.replies, (reply) => {
+	var reply = {
+		status: 200,
+	}
+	var request = {}
+
+	var r = _.find(server.replies, (reply) => {
 		return m.partial_match(reply.expect)(req, _collected_data)
 	})
-	if(reply) {
-		reply = reply.data
-	} else {
-		reply = {
-			status: 200,
-		}
+
+	if(r) {
+		reply = r.data
+		request = r.expect
 	}
-	print_wait_http_request(format, server, req, body, reply)
+	print_wait_http_request(format, server, request, reply)
 	send_http_reply(res, reply)
 }
 
