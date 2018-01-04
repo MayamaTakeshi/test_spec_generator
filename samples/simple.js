@@ -45,12 +45,12 @@ var servers = [
 		type: "http",
 		host: '127.0.0.1',
 		port: HTTP_PORT,
-		replies: [
+		hooks: [
 			{
-				expect: {
+				match: {
 					url: '/blablabla?id=!{id}',
 				},
-				data: {
+				reply: {
 					status: 200,
 					headers: {
 						'Content-Type': 'application/json',
@@ -62,8 +62,8 @@ var servers = [
 				}
 			},
 			{
-				expect: {},
-				data: {
+				match: {},
+				reply: {
 					status: 202,
 					headers: {
 						'Content-Type': 'text/plain',
@@ -79,10 +79,10 @@ var servers = [
 		type: "udp",
 		host: "127.0.0.1",
 		port: UDP_PORT,
-		replies: [
+		hooks: [
 			{
-				expect: "!{name}@!{domain}",
-				data: "'${name}' at '${domain}'",
+				match: "!{name}@!{domain}",
+				reply: "'${name}' at '${domain}'",
 			}
 		]
 	},
@@ -113,10 +113,6 @@ tsg.setup(format,
 				}
 			);
 		})
-
-	},
-	(conn, server_name, query) => {
-		return null;
 	}
 )
 

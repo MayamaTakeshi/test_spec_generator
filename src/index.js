@@ -79,12 +79,12 @@ var convert_dbquery_reply_to_sexp = (reply) => {
 	}
 }
 
-var print_wait_dbquery_request = (format, server_name, query, reply) => {
+var print_wait_dbquery_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
 		print(`<WaitAndReply>`)
-		print(`<DbQuery server_name="${server_name}">${query}</DbQuery>`)
+		print(`<DbQuery server_name="${server.name}">${request.query}</DbQuery>`)
 		print(`<Reply>${JSON.stringify(reply)}</Reply>`)
 		print(`</WaitAndReply>`)
 		break
@@ -94,8 +94,8 @@ var print_wait_dbquery_request = (format, server_name, query, reply) => {
 			atom('WaitAndReply'),
 			[
 				atom('DbQuery'),
-				server_name,
-				query
+				server.name,
+				request.query
 			],
 			[
 				atom('Reply'),
@@ -150,13 +150,13 @@ var process_http_request = (format, server, req, res, body) => {
 	}
 	var request = {}
 
-	var r = _.find(server.replies, (reply) => {
-		return m.partial_match(reply.expect)(req, _collected_data)
+	var h = _.find(server.hooks, (hook) => {
+		return m.partial_match(hook.match)(req, _collected_data)
 	})
 
-	if(r) {
-		reply = r.data
-		request = r.expect
+	if(h) {
+		request = h.match
+		reply = h.reply
 	}
 	print_wait_http_request(format, server, request, reply)
 
@@ -206,26 +206,26 @@ var send_udp_reply = (server, socket, rinfo, reply) => {
 
 
 var process_udp_request = (format, server, socket, rinfo, msg) => {
-	var r = _.find(server.replies, (reply) => {
-		return sm.gen_matcher(reply.expect)(msg, _collected_data)
+	var h = _.find(server.hooks, (hook) => {
+		return sm.gen_matcher(hook.match)(msg, _collected_data)
 	})
 
-	if(!r) {
-		throw `Could not find UDP reply for '${msg}'`
+	if(!h) {
+		throw `Could not resolve UDP reply for '${msg}'`
 	}
 
-	var reply = r.data
-	var request = r.expect
+	var request = h.match
+	var reply = h.reply
 
 	print_wait_udp_request(format, server, request, reply)
 
-	// This must be done after print_wait_http_request as reply will be modified by send_http_reply 
+	// This must be done after print_wait_udp_request as reply will be modified by send_http_reply 
 	send_udp_reply(server, socket, rinfo, reply)
 }
 
 
 module.exports = {
-	setup: (format, servers, ready_cb, dbquery_cb) => {
+	setup: (format, servers, ready_cb) => {
 		if(!['xml', 'sexp'].includes(format)) throw `Invalid format ${format}`
 
 		var mysql_servers = servers.filter(s => s.type == 'mysql')
@@ -247,7 +247,7 @@ module.exports = {
 			() => {
 				check_ready(mysql_servers.length)
 			},
-			(conn, server_name, query) => {
+			(conn, server, query) => {
 				//debug_print(`Simulated MySQL server ${server_name} got query: ${query}`)
 
 				var q = query.trim().toLowerCase().replace(/\s\s+/g, ' ')
@@ -255,16 +255,30 @@ module.exports = {
 				var command = q.split(" ")[0]
 				//debug_print(`command=${command}`)
 
-				var reply = dbquery_cb(conn, server_name, query);
+				var request = {
+					query: query
+				}
+
+				var reply = null
+
+				var h = _.find(server.hooks, (hook) => {
+					return m.partial_match(hook.match)(request, _collected_data)
+				})
+
+				if(h) {
+					request = h.match
+					reply = h.reply
+				}
+
 				if(reply) {
-					print_wait_dbquery_request(format, server_name, query, reply)
+					print_wait_dbquery_request(format, server, request, reply)
 					return reply
 				} else {
 					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback'].includes(command)) {
 						reply = {
 							type: 'ok',
 						}
-						print_wait_dbquery_request(format, server_name, query, reply)
+						print_wait_dbquery_request(format, server, request, reply)
 						return reply
 					} else if (command == "select") {
 						var fields = get_select_fields(q)
@@ -275,7 +289,7 @@ module.exports = {
 							fields: fields,
 							rows: [gen_fake_row(id_field, id_value, fields)],
 						}	
-						print_wait_dbquery_request(format, server_name, query, reply)
+						print_wait_dbquery_request(format, server, request, reply)
 						return reply
 					} else {
 						debug_print(`Unexpected query`)
