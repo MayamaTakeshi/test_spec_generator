@@ -62,7 +62,8 @@ var servers = [
 				}
 			},
 			{
-				match: {},
+				match: {
+				},
 				reply: {
 					status: 202,
 					headers: {

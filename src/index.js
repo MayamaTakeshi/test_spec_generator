@@ -146,21 +146,19 @@ var send_http_reply = (res, reply) => {
 }
 
 var process_http_request = (format, server, req, res, body) => {
-	var reply = {
-		status: 200,
-	}
-	var request = {}
-
 	req.body = body
 
 	var h = _.find(server.hooks, (hook) => {
 		return m.partial_match(hook.match)(req, _collected_data)
 	})
 
-	if(h) {
-		request = h.match
-		reply = h.reply
+	if(!h) {
+		throw `Could not resolve HTTP reply for server '${server.name}' and url '${req.url}'`
 	}
+
+	var request = h.match
+	var reply = h.reply
+
 	print_wait_http_request(format, server, request, reply)
 
 	// This must be done after print_wait_http_request as reply will be modified by send_http_reply 
