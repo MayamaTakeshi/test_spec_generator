@@ -14,7 +14,8 @@ const build_sexp = require('sexp_builder').build
 
 const _collected_data = {}
 
-const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
+//const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
+const PARSEABLE_CONTENT_TYPES = ['application/json']
 
 const traverseTemplate = require('traverse-template')
 
@@ -149,6 +150,8 @@ var process_http_request = (format, server, req, res, body) => {
 		status: 200,
 	}
 	var request = {}
+
+	req.body = body
 
 	var h = _.find(server.hooks, (hook) => {
 		return m.partial_match(hook.match)(req, _collected_data)
