@@ -275,25 +275,31 @@ module.exports = {
 					print_wait_dbquery_request(format, server, request, reply)
 					return reply
 				} else {
-					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback'].includes(command)) {
+					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback', 'show'].includes(command)) {
 						reply = {
 							type: 'ok',
 						}
 						print_wait_dbquery_request(format, server, request, reply)
 						return reply
 					} else if (command == "select") {
-						var fields = get_select_fields(q)
-						var id_field = get_record_id_field(q)
-						var id_value = get_record_id_value(q)
-						reply = {
-							type: 'dataset',
-							fields: fields,
-							rows: [gen_fake_row(id_field, id_value, fields)],
-						}	
+						if(q.indexOf(" from ") > 0) {
+							var fields = get_select_fields(q)
+							var id_field = get_record_id_field(q)
+							var id_value = get_record_id_value(q)
+							reply = {
+								type: 'dataset',
+								fields: fields,
+								rows: [gen_fake_row(id_field, id_value, fields)],
+							}
+						} else {
+							reply = {
+								type:'ok',
+							}
+						}
 						print_wait_dbquery_request(format, server, request, reply)
 						return reply
 					} else {
-						debug_print(`Unexpected query`)
+						debug_print(`Unexpected query '${query}'`)
 						process.exit(1)
 					}
 				}

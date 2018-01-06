@@ -1805,8 +1805,8 @@ ms@2.0.0:
     sqlstring "2.3.0"
 
 "mysql_query_collector@https://github.com/MayamaTakeshi/mysql_query_collector":
-  version "1.1.0"
-  resolved "https://github.com/MayamaTakeshi/mysql_query_collector#5e15dbd6a4472ef713cbb1dda3d9ca6d20e3e485"
+  version "1.2.0"
+  resolved "https://github.com/MayamaTakeshi/mysql_query_collector#ddd008bc5a9a0e6eb09e56e862eaca26859143aa"
   dependencies:
     deasync "^0.1.12"
     mysql "https://github.com/mysqljs/mysql#v2.15.0"

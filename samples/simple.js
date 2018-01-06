@@ -2,6 +2,8 @@ const mysql      = require('mysql')
 const tsg = require('../src/index.js')
 var request = require('request');
 
+const types = require('mysql/lib/protocol/constants/types.js')
+
 request = request.defaults({'proxy': null})
 
 var usage = (err) => {
@@ -39,6 +41,27 @@ var servers = [
 		type: "mysql",
 		host: '127.0.0.1',
 		port: MYSQL_PORT,
+		hooks: [
+			{
+				match: {
+					query: "select id, name from user",
+				},
+				reply: {
+					type: "dataset",
+					fields: [
+						{
+							name: "id",
+							type: types.LONG,
+						},
+						{
+							name: "name",
+							type: types.VARCHAR,
+						}
+					],
+					rows: [[10, "user1"]],
+				},
+			},
+		],
 	},
 	{	
 		name: "http_server1",
