@@ -112,8 +112,8 @@ var print_wait_dbquery_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
-		print(`<WaitAndReply>`)
-		print(`<DbQuery server_name="${server.name}">${request.query}</DbQuery>`)
+		print(`<WaitAndReply server_name="${server.name}">`)
+		print(`<DbQuery>${request.query}</DbQuery>`)
 		print(`<Reply>${JSON.stringify(reply)}</Reply>`)
 		print(`</WaitAndReply>`)
 		break
@@ -121,9 +121,9 @@ var print_wait_dbquery_request = (format, server, request, reply) => {
 		print('')
 		print(build_sexp([
 			atom('WaitAndReply'),
+			server.name,
 			[
 				atom('DbQuery'),
-				server.name,
 				request.query
 			],
 			[
@@ -139,8 +139,8 @@ var print_wait_http_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
-		print(`<WaitAndReply>
-<HttpRequest server_name="${server.name}">${JSON.stringify(request)}</HttpRequest>
+		print(`<WaitAndReply server_name="${server.name}">
+<HttpRequest>${JSON.stringify(request)}</HttpRequest>
 <Reply>${JSON.stringify(reply)}</Reply>
 </WaitAndReply>`)
 		break
@@ -148,9 +148,9 @@ var print_wait_http_request = (format, server, request, reply) => {
 		print('')
 		print(build_sexp([
 			atom('WaitAndReply'), 
+			server.name,
 			[
 				atom('HttpRequest'),
-				server.name,
 				request
 			],
 			[
@@ -196,8 +196,8 @@ var print_wait_udp_request = (format, server, request, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
-		print(`<WaitAndReply>
-<UdpRequest server_name="${server.name}">${request}</UdpRequest>
+		print(`<WaitAndReply server_name="${server.name}">
+<UdpRequest>${request}</UdpRequest>
 <Reply>${reply}</Reply>
 </WaitAndReply>`)
 		break
@@ -205,9 +205,9 @@ var print_wait_udp_request = (format, server, request, reply) => {
 		print('')
 		print(build_sexp([
 			atom('WaitAndReply'), 
+			server.name,
 			[
 				atom('UdpRequest'),
-				server.name,
 				request
 			],
 			[
