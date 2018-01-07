@@ -91,8 +91,6 @@ var get_record_id_value = query => {
 }
 
 var gen_fake_row = (record_id_field, record_id_value, fields) => {
-	console.log("gen_fake_row")
-	console.log(fields)
 	var counter = 1
 	var row = []
 	fields.forEach(f => {

@@ -1,6 +1,6 @@
 {
   "name": "test_spec_generator",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "A simple test spec generation library based on MySQL queries and HTTP API calls.",
   "main": "src/index.js",
   "repository": "https://MayamaTakeshi@github.com/MayamaTakeshi/test_spec_generator",
