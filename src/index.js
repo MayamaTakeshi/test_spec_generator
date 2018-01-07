@@ -21,28 +21,67 @@ const traverseTemplate = require('traverse-template')
 
 const dgram = require('dgram')
 
-var debug_print = (s) => {
+const types = require('mysql/lib/protocol/constants/types.js')
+
+var debug_print = s => {
 	console.error(s)
 }
 
-var print = (s) => {
+var print = s => {
 	console.log(s)
 }
 
-var get_select_fields = (query) => {
+var get_select_fields = query => {
 	var start = 6 // length of "select"
 	var end = query.indexOf(" from ")
-	var str = query.substring(start, end)
-	return str.split(",").map((s) => { return s.trim() })
+	if(end > 0) {
+		var str = query.substring(start, end)
+		return str.split(",").map(s => s.trim())
+	}
+
+	var fields = query.substring(start).split(",").map(s => s.trim())
+
+	return _.map(fields, f => {
+		if(f.startsWith("'") && f.endsWith("'")) {
+			return {
+				name: f.slice(1, -1),
+				type: types.VARCHAR,
+			}
+		} else if(f.startsWith('"') && f.endsWith('"')) {
+			return {
+				name: f.slice(1, -1),
+				type: types.VARCHAR,
+			}
+		} else if(f.match(/[.1234567890]+/)) {
+			return {
+				name: f,
+				type: types.FLOAT,
+			}
+		} else if(f.match(/[1234567890]+/)) {
+			return {
+				name: f,
+				type: types.DECIMAL,
+			}
+		} else {
+			return {
+				name: f,
+				type: types.VARCHAR,
+			}
+		}
+	})
 }
 
-var get_record_id_field = (query) => {
+var get_record_id_field = query => {
+	if(query.indexOf(" where " ) < 0) return null
+
 	var start = query.indexOf(" where ") + 7
 	var end = query.indexOf("=")
 	return query.substring(start, end).trim()
 }
 
-var get_record_id_value = (query) => {
+var get_record_id_value = query => {
+	if(query.indexOf(" where " ) < 0) return null
+
 	var start = query.indexOf("=") + 1
 	var str = query.substring(start).trim()
 	if(str.startsWith("'") && str.endsWith("'")) {
@@ -52,10 +91,15 @@ var get_record_id_value = (query) => {
 }
 
 var gen_fake_row = (record_id_field, record_id_value, fields) => {
+	console.log("gen_fake_row")
+	console.log(fields)
 	var counter = 1
 	var row = []
-	fields.forEach((f) => {
-		if(f == record_id_field) {
+	fields.forEach(f => {
+		var name = f
+		if(f.name) name = f.name
+
+		if(record_id_field && name == record_id_field) {
 			row.push(record_id_value)
 		} else {
 			row.push(counter.toString())
@@ -64,20 +108,6 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 	})
 
 	return row
-}
-
-var convert_dbquery_reply_to_sexp = (reply) => {
-	switch(reply.type) {
-	case 'error':
-			return build_sexp([atom('error'), reply.errno, reply.message])
-			break
-	case 'ok':
-			return 'ok'
-			break
-	case 'dataset':
-			return build_sexp([atom('dataset'), reply.fields, reply.rows])
-			break
-	}
 }
 
 var print_wait_dbquery_request = (format, server, request, reply) => {
@@ -148,9 +178,7 @@ var send_http_reply = (res, reply) => {
 var process_http_request = (format, server, req, res, body) => {
 	req.body = body
 
-	var h = _.find(server.hooks, (hook) => {
-		return m.partial_match(hook.match)(req, _collected_data)
-	})
+	var h = _.find(server.hooks, hook => m.partial_match(hook.match)(req, _collected_data))
 
 	if(!h) {
 		throw `Could not resolve HTTP reply for server '${server.name}' and url '${req.url}'`
@@ -198,7 +226,7 @@ var send_udp_reply = (server, socket, rinfo, reply) => {
 		reply: reply
 	}
 	traverseTemplate(temp, _collected_data)
-	socket.send(temp.reply, rinfo.port, rinfo.address, (err) => {
+	socket.send(temp.reply, rinfo.port, rinfo.address, err => {
 		if(err) {
 			throw `server ${server.name} error when sending ${temp.reply} to ${rinfo.address}:${rinfo.port}: ${err}`
 		}
@@ -207,9 +235,7 @@ var send_udp_reply = (server, socket, rinfo, reply) => {
 
 
 var process_udp_request = (format, server, socket, rinfo, msg) => {
-	var h = _.find(server.hooks, (hook) => {
-		return sm.gen_matcher(hook.match)(msg, _collected_data)
-	})
+	var h = _.find(server.hooks, hook => sm.gen_matcher(hook.match)(msg, _collected_data))
 
 	if(!h) {
 		throw `Could not resolve UDP reply for '${msg}'`
@@ -237,7 +263,7 @@ module.exports = {
 
 		var ready_servers = 0;
 
-		var check_ready = (c) => {
+		var check_ready = c => {
 			ready_servers += c
 			if(ready_servers == servers.length) {
 				ready_cb()
@@ -262,7 +288,7 @@ module.exports = {
 
 				var reply = null
 
-				var h = _.find(server.hooks, (hook) => {
+				var h = _.find(server.hooks, hook => {
 					return m.partial_match(hook.match)(request, _collected_data)
 				})
 
@@ -275,7 +301,7 @@ module.exports = {
 					print_wait_dbquery_request(format, server, request, reply)
 					return reply
 				} else {
-					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback'].includes(command)) {
+					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback', 'show'].includes(command)) {
 						reply = {
 							type: 'ok',
 						}
@@ -285,15 +311,25 @@ module.exports = {
 						var fields = get_select_fields(q)
 						var id_field = get_record_id_field(q)
 						var id_value = get_record_id_value(q)
+						var rows
+						if(id_field) {
+							rows = [gen_fake_row(id_field, id_value, fields)]
+						} else {
+							if(_.every(fields, f => f.name)) {
+								rows = [_.map(fields, f => f.name)]
+							} else {
+								rows = [gen_fake_row(null, null, fields)]
+							}
+						}
 						reply = {
 							type: 'dataset',
 							fields: fields,
-							rows: [gen_fake_row(id_field, id_value, fields)],
-						}	
+							rows: rows,
+						}
 						print_wait_dbquery_request(format, server, request, reply)
 						return reply
 					} else {
-						debug_print(`Unexpected query`)
+						debug_print(`Unexpected query '${query}'`)
 						process.exit(1)
 					}
 				}
@@ -332,7 +368,7 @@ module.exports = {
 		udp_servers.forEach(server => {
 			var socket = dgram.createSocket('udp4');
 
-			socket.on('error', (err) => {
+			socket.on('error', err => {
 				throw `server error:\n${err.stack}`
 			});
 

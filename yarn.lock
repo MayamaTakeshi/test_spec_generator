@@ -1795,18 +1795,18 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-"mysql@https://github.com/mysqljs/mysql#v2.15.0":
+"mysql@git+https://github.com/mysqljs/mysql.git#v2.15.0":
   version "2.15.0"
-  resolved "https://github.com/mysqljs/mysql#e16c52da980e46012a391232be884b797b8af070"
+  resolved "git+https://github.com/mysqljs/mysql.git#e16c52da980e46012a391232be884b797b8af070"
   dependencies:
     bignumber.js "4.0.4"
     readable-stream "2.3.3"
     safe-buffer "5.1.1"
     sqlstring "2.3.0"
 
-"mysql_query_collector@https://github.com/MayamaTakeshi/mysql_query_collector":
-  version "1.1.0"
-  resolved "https://github.com/MayamaTakeshi/mysql_query_collector#5e15dbd6a4472ef713cbb1dda3d9ca6d20e3e485"
+mysql_query_collector@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/mysql_query_collector/-/mysql_query_collector-1.3.0.tgz#8ef369fc761657377a8399a98141111c0a20ea9a"
   dependencies:
     deasync "^0.1.12"
     mysql "https://github.com/mysqljs/mysql#v2.15.0"
