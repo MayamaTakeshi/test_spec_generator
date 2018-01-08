@@ -299,7 +299,7 @@ module.exports = {
 					print_wait_dbquery_request(format, server, request, reply)
 					return reply
 				} else {
-					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback', 'show'].includes(command)) {
+					if(['set', 'insert', 'update', 'delete', 'call', 'commit', 'rollback', 'show', 'replace'].includes(command)) {
 						reply = {
 							type: 'ok',
 						}
@@ -327,7 +327,7 @@ module.exports = {
 						print_wait_dbquery_request(format, server, request, reply)
 						return reply
 					} else {
-						debug_print(`Unexpected query '${query}'`)
+						debug_print(`Unexpected query '${query}' arrived at server ${server.name}`)
 						process.exit(1)
 					}
 				}
