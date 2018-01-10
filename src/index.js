@@ -6,7 +6,6 @@ const anyBody = require('body/any')
 const m = require('data-matching');
 const sm = require('string-matching')
 
-
 const _ = require('lodash')
 
 const atom = require('sexp_builder').atom
@@ -23,12 +22,37 @@ const dgram = require('dgram')
 
 const types = require('mysql/lib/protocol/constants/types.js')
 
+const traverse = require('traverse')
+const template = require('es6-template')
+
+const clone = require('clone')
+
+var _options = {
+	interpolate_requests: true,
+	interpolate_replies: true,
+}
+
 var debug_print = s => {
 	console.error(s)
 }
 
 var print = s => {
 	console.log(s)
+}
+
+var convert_bang_to_question = s => {
+	return s.replace(/(!{([^}]+)})/g, (all, outer, inner) => "${" + inner + "}")
+}
+
+var traverse_interpolating_bangs = (obj, locals) => {
+	traverse(obj).forEach(function (value) {
+		if (typeof value === 'string') {
+			var v = convert_bang_to_question(value)
+			this.update(template(v, locals || obj))
+		}
+	})
+
+	return obj
 }
 
 var get_select_fields = query => {
@@ -109,11 +133,20 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 }
 
 var print_wait_dbquery_request = (format, server, request, reply) => {
+	var c_request = clone(request)
+	if(_options.interpolate_requests) {
+		traverse_interpolating_bangs(c_request, _collected_data)
+	}
+
+	if(_options.interpolate_replies) {
+		traverseTemplate(reply, _collected_data)
+	}
+
 	switch(format) {
 	case 'xml':
 		print('')
 		print(`<WaitAndReply server_name="${server.name}">`)
-		print(`<DbQuery>${request.query}</DbQuery>`)
+		print(`<DbQuery>${c_request.query}</DbQuery>`)
 		print(`<Reply>${JSON.stringify(reply)}</Reply>`)
 		print(`</WaitAndReply>`)
 		break
@@ -124,7 +157,7 @@ var print_wait_dbquery_request = (format, server, request, reply) => {
 			server.name,
 			[
 				atom('DbQuery'),
-				request.query
+				c_request.query
 			],
 			[
 				atom('Reply'),
@@ -136,11 +169,21 @@ var print_wait_dbquery_request = (format, server, request, reply) => {
 }
 
 var print_wait_http_request = (format, server, request, reply) => {
+	var c_request = clone(request)
+	if(_options.interpolate_requests) {
+		traverse_interpolating_bangs(c_request, _collected_data)
+	}
+
+	if(_options.interpolate_replies) {
+		//in case of reply, we must use use the original object instead of a clone to ensure send_*_reply will use the same object
+		traverseTemplate(reply, _collected_data)
+	}
+
 	switch(format) {
 	case 'xml':
 		print('')
 		print(`<WaitAndReply server_name="${server.name}">
-<HttpRequest>${JSON.stringify(request)}</HttpRequest>
+<HttpRequest>${JSON.stringify(c_request)}</HttpRequest>
 <Reply>${JSON.stringify(reply)}</Reply>
 </WaitAndReply>`)
 		break
@@ -151,7 +194,7 @@ var print_wait_http_request = (format, server, request, reply) => {
 			server.name,
 			[
 				atom('HttpRequest'),
-				request
+				c_request
 			],
 			[
 				atom('Reply'),
@@ -163,13 +206,15 @@ var print_wait_http_request = (format, server, request, reply) => {
 }
 
 var send_http_reply = (res, reply) => {
-	traverseTemplate(reply, _collected_data)
+	var c_reply = clone(reply)
 
-	res.writeHead(reply.status, reply.headers)
+	traverseTemplate(c_reply, _collected_data)
+
+	res.writeHead(c_reply.status, c_reply.headers)
 	if(_.some(reply.headers, (v,k) => v.toLowerCase() == 'application/json')) {
-		res.end(JSON.stringify(reply.body))
+		res.end(JSON.stringify(c_reply.body))
 	} else {
-		res.end(reply.body)
+		res.end(c_reply.body)
 	}
 }
 
@@ -187,17 +232,26 @@ var process_http_request = (format, server, req, res, body) => {
 
 	print_wait_http_request(format, server, request, reply)
 
-	// This must be done after print_wait_http_request as reply will be modified by send_http_reply 
 	send_http_reply(res, reply)
 }
 
 
 var print_wait_udp_request = (format, server, request, reply) => {
+	var c_request = clone(request)
+	if(_options.interpolate_requests) {
+		traverse_interpolating_bangs(c_request, _collected_data)
+	}
+
+	if(_options.interpolate_replies) {
+		//in case of reply, we must use use the original object instead of a clone to ensure send_*_reply will use the same object
+		traverseTemplate(reply, _collected_data)
+	}
+
 	switch(format) {
 	case 'xml':
 		print('')
 		print(`<WaitAndReply server_name="${server.name}">
-<UdpRequest>${request}</UdpRequest>
+<UdpRequest>${c_request}</UdpRequest>
 <Reply>${reply}</Reply>
 </WaitAndReply>`)
 		break
@@ -208,7 +262,7 @@ var print_wait_udp_request = (format, server, request, reply) => {
 			server.name,
 			[
 				atom('UdpRequest'),
-				request
+				c_request
 			],
 			[
 				atom('Reply'),
@@ -220,11 +274,9 @@ var print_wait_udp_request = (format, server, request, reply) => {
 }
 
 var send_udp_reply = (server, socket, rinfo, reply) => {
-	var temp = {
-		reply: reply
-	}
-	traverseTemplate(temp, _collected_data)
-	socket.send(temp.reply, rinfo.port, rinfo.address, err => {
+	traverseTemplate(reply, _collected_data)
+
+	socket.send(reply.body, rinfo.port, rinfo.address, err => {
 		if(err) {
 			throw `server ${server.name} error when sending ${temp.reply} to ${rinfo.address}:${rinfo.port}: ${err}`
 		}
@@ -244,14 +296,17 @@ var process_udp_request = (format, server, socket, rinfo, msg) => {
 
 	print_wait_udp_request(format, server, request, reply)
 
-	// This must be done after print_wait_udp_request as reply will be modified by send_http_reply 
 	send_udp_reply(server, socket, rinfo, reply)
 }
 
 
 module.exports = {
-	setup: (format, servers, ready_cb) => {
+	setup: (format, servers, ready_cb, options) => {
 		if(!['xml', 'sexp'].includes(format)) throw `Invalid format ${format}`
+
+		if(options) {
+			options = _.extend(_options, options)
+		}
 
 		var mysql_servers = servers.filter(s => s.type == 'mysql')
 

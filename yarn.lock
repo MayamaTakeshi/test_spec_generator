@@ -471,6 +471,10 @@ cliui@^4.0.0:
     strip-ansi "^4.0.0"
     wrap-ansi "^2.0.0"
 
+clone@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/clone/-/clone-2.1.1.tgz#d217d1e961118e3ac9a4b8bba3285553bf647cdb"
+
 co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
@@ -1807,9 +1811,9 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-"mysql@git+https://github.com/mysqljs/mysql.git#v2.15.0":
+"mysql@https://github.com/mysqljs/mysql#v2.15.0":
   version "2.15.0"
-  resolved "git+https://github.com/mysqljs/mysql.git#e16c52da980e46012a391232be884b797b8af070"
+  resolved "https://github.com/mysqljs/mysql#e16c52da980e46012a391232be884b797b8af070"
   dependencies:
     bignumber.js "4.0.4"
     readable-stream "2.3.3"
