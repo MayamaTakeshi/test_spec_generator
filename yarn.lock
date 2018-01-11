@@ -1811,9 +1811,9 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-"mysql@https://github.com/mysqljs/mysql#v2.15.0":
+"mysql@git+https://github.com/mysqljs/mysql.git#v2.15.0":
   version "2.15.0"
-  resolved "https://github.com/mysqljs/mysql#e16c52da980e46012a391232be884b797b8af070"
+  resolved "git+https://github.com/mysqljs/mysql.git#e16c52da980e46012a391232be884b797b8af070"
   dependencies:
     bignumber.js "4.0.4"
     readable-stream "2.3.3"
@@ -2332,9 +2332,9 @@ set-blocking@^2.0.0, set-blocking@~2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/set-blocking/-/set-blocking-2.0.0.tgz#045f9782d011ae9a6803ddd382b24392b3d890f7"
 
-sexp_builder@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/sexp_builder/-/sexp_builder-1.1.0.tgz#95123719b226dd63fa1cfa3186fa3b904e4aa217"
+sexp_builder@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/sexp_builder/-/sexp_builder-1.2.0.tgz#8f490eb8d03313452edd79fce84a6f08cfe3f102"
 
 shebang-command@^1.2.0:
   version "1.2.0"
