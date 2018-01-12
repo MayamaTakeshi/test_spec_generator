@@ -439,5 +439,11 @@ module.exports = {
 			socket.bind(server.port, server.host);
 		})
 	},
+
+	print_wait_dbquery_request: print_wait_dbquery_request,
+
+	print_wait_http_request: print_wait_http_request,
+
+	print_wait_udp_request: print_wait_udp_request,
 }
 
