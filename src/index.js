@@ -13,8 +13,8 @@ const build_sexp = require('sexp_builder').build
 
 const _collected_data = {}
 
-//const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
-const PARSEABLE_CONTENT_TYPES = ['application/json']
+const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
+//const PARSEABLE_CONTENT_TYPES = ['application/json']
 
 const traverseTemplate = require('traverse-template')
 
