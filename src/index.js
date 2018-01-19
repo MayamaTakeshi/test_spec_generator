@@ -8,7 +8,7 @@ const sm = require('string-matching')
 
 const _ = require('lodash')
 
-const atom = require('sexp_builder').atom
+const symbol = require('sexp_builder').symbol
 const build_sexp = require('sexp_builder').build
 
 const _collected_data = {}
@@ -153,14 +153,14 @@ var print_wait_dbquery_request = (format, server, request, reply) => {
 	case 'sexp':
 		print('')
 		print(build_sexp([
-			atom('WaitAndReply'),
+			symbol('WaitAndReply'),
 			server.name,
 			[
-				atom('DbQuery'),
+				symbol('DbQuery'),
 				c_request.query
 			],
 			[
-				atom('Reply'),
+				symbol('Reply'),
 				reply 
 			]
 		]))
@@ -190,14 +190,14 @@ var print_wait_http_request = (format, server, request, reply) => {
 	case 'sexp':
 		print('')
 		print(build_sexp([
-			atom('WaitAndReply'), 
+			symbol('WaitAndReply'), 
 			server.name,
 			[
-				atom('HttpRequest'),
+				symbol('HttpRequest'),
 				c_request
 			],
 			[
-				atom('Reply'),
+				symbol('Reply'),
 				reply
 			]
 		]))
@@ -258,14 +258,14 @@ var print_wait_udp_request = (format, server, request, reply) => {
 	case 'sexp':
 		print('')
 		print(build_sexp([
-			atom('WaitAndReply'), 
+			symbol('WaitAndReply'), 
 			server.name,
 			[
-				atom('UdpRequest'),
+				symbol('UdpRequest'),
 				c_request
 			],
 			[
-				atom('Reply'),
+				symbol('Reply'),
 				reply
 			]
 		]))
