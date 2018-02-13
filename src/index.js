@@ -132,6 +132,35 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 	return row
 }
 
+var print_wait_init_db_request = (format, server, database_name) => {
+	var reply = {type: 'ok'}
+
+	switch(format) {
+	case 'xml':
+		print('')
+		print(`<WaitAndReply server_name="${server.name}">`)
+		print(`<InitDb>${database_name}</InitDb>`)
+		print(`<Reply>${JSON.stringify(reply)}</Reply>`)
+		print(`</WaitAndReply>`)
+		break
+	case 'sexp':
+		print('')
+		print(build_sexp([
+			symbol('WaitAndReply'),
+			server.name,
+			[
+				symbol('InitDb'),
+				database_name
+			],
+			[
+				symbol('Reply'),
+				reply
+			]
+		]))
+		break
+	}
+}
+
 var print_wait_dbquery_request = (format, server, request, reply) => {
 	var c_request = clone(request)
 	if(_options.interpolate_requests) {
@@ -161,7 +190,7 @@ var print_wait_dbquery_request = (format, server, request, reply) => {
 			],
 			[
 				symbol('Reply'),
-				reply 
+				reply
 			]
 		]))
 		break
@@ -386,6 +415,10 @@ module.exports = {
 						process.exit(1)
 					}
 				}
+			},
+			(conn, server, database_name) => {
+				print_wait_initdb_request(format, server, database_name)
+				return {type: 'ok'}
 			}
 		)
 

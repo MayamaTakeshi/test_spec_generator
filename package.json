@@ -14,7 +14,7 @@
     "clone": "^2.1.1",
     "data-matching": "^1.7.0",
     "lodash": "^4.17.4",
-    "mysql_query_collector": "^1.5.0",
+    "mysql_query_collector": "^1.7.0",
     "sexp_builder": "^1.5.0",
     "traverse-template": "^1.0.0"
   }
