@@ -132,9 +132,7 @@ var gen_fake_row = (record_id_field, record_id_value, fields) => {
 	return row
 }
 
-var print_wait_init_db_request = (format, server, database_name) => {
-	var reply = {type: 'ok'}
-
+var print_wait_init_db_request = (format, server, database_name, reply) => {
 	switch(format) {
 	case 'xml':
 		print('')
@@ -417,8 +415,9 @@ module.exports = {
 				}
 			},
 			(conn, server, database_name) => {
-				print_wait_initdb_request(format, server, database_name)
-				return {type: 'ok'}
+				var reply = {type: 'ok'}
+				print_wait_init_db_request(format, server, database_name, reply)
+				return reply
 			}
 		)
 
@@ -474,6 +473,8 @@ module.exports = {
 	},
 
 	print_wait_dbquery_request: print_wait_dbquery_request,
+
+	print_wait_init_db_request: print_wait_init_db_request,
 
 	print_wait_http_request: print_wait_http_request,
 
