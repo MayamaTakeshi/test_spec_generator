@@ -1,7 +1,5 @@
 const mqc = require('mysql_query_collector')
 const http = require('http')
-const textBody = require('body')
-const anyBody = require('body/any')
 
 const m = require('data-matching');
 const sm = require('string-matching')
@@ -13,9 +11,6 @@ const build_sexp = require('sexp_builder').build
 
 const _collected_data = {}
 
-const PARSEABLE_CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded']
-//const PARSEABLE_CONTENT_TYPES = ['application/json']
-
 const traverseTemplate = require('traverse-template')
 
 const dgram = require('dgram')
@@ -26,6 +21,9 @@ const traverse = require('traverse')
 const template = require('es6-template')
 
 const clone = require('clone')
+
+const querystringParse = require("querystring").parse
+
 
 var _options = {
 	interpolate_requests: true,
@@ -237,12 +235,20 @@ var send_http_reply = (res, reply) => {
 
 	traverseTemplate(c_reply, _collected_data)
 
-	res.writeHead(c_reply.status, c_reply.headers)
+	var body;
+	
 	if(_.some(reply.headers, (v,k) => v.toLowerCase() == 'application/json')) {
-		res.end(JSON.stringify(c_reply.body))
+		body = JSON.stringify(c_reply.body)
 	} else {
-		res.end(c_reply.body)
+		body = c_reply.body
 	}
+
+	if(body) {
+		c_reply.headers['content-length'] = body.length
+	}
+	res.writeHead(c_reply.status, c_reply.headers)
+
+	res.end(body)
 }
 
 var process_http_request = (format, server, req, res, body) => {
@@ -251,7 +257,7 @@ var process_http_request = (format, server, req, res, body) => {
 	var h = _.find(server.hooks, hook => m.partial_match(hook.match)(req, _collected_data))
 
 	if(!h) {
-		throw `Could not resolve HTTP reply for server '${server.name}' and url '${req.url}'`
+		throw `Could not resolve HTTP reply for server=${server.name}, url=${req.url} and body=[[${body}]]`
 	}
 
 	var request = h.match
@@ -422,32 +428,46 @@ module.exports = {
 		)
 
 		http_servers.forEach(server => {
+
 			var s = http.createServer((req, res) => {
-				if(req.headers['content-type'] == 'plain/text') {
-					textBody(req, res, {}, (err, body) => {
-						if(err) throw err
-						process_http_request(format, server, req, res, body)
-					})
-				} else if(PARSEABLE_CONTENT_TYPES.includes(req.headers['content-type'])) {
-					anyBody(req, res, {}, (err, body) => {
-						if(err) throw err
-						process_http_request(format, server, req, res, body) 
-					})
-				} else {
-					process_http_request(format, server, req, res, null)
-				}
+				var data = ""
+				var content_type = req.headers['content-type']
+				
+				req.on('data', function(chunk) {
+					data += chunk.toString()
+				})
+
+				req.on('end', function() {
+					var body
+					switch(content_type) {
+					case 'application/json':
+						body = JSON.parse(data)
+						break
+					case 'application/x-www-form-urlencoded':
+						body = querystringParse(data)
+						break
+					default:
+						body = data
+						break
+					}
+					process_http_request(format, server, req, res, body)
+				})
+
 			})
+
 			s.listen({
 				host: server.address,
 				port: server.port,
 			})
+
 			s.on('error', function (e) {
 				throw e
-			});
+			})
+
 			s.on('listening', function (e) {
 				debug_print(`HTTP server ${server.name} created. Listening ${server.host}:${server.port}`)
 				check_ready(1)
-			});
+			})
 		})
 
 		udp_servers.forEach(server => {
