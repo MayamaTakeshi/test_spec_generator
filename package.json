@@ -1,6 +1,6 @@
 {
   "name": "test_spec_generator",
-  "version": "1.23.11",
+  "version": "1.24.0",
   "description": "A simple test spec generation library based on MySQL queries and HTTP API calls.",
   "main": "src/index.js",
   "repository": "https://MayamaTakeshi@github.com/MayamaTakeshi/test_spec_generator",
@@ -12,16 +12,16 @@
   "dependencies": {
     "clone": "^2.1.2",
     "data-matching": "^1.23.6",
+    "json-schema": "^0.4.0",
     "kind-of": "^6.0.3",
     "lodash": "^4.17.20",
-    "mysql_query_collector": "^1.11.1",
+    "minimatch": "^3.0.5",
+    "mysql_query_collector": "^1.12.0",
+    "request": "^2.88.0",
     "set-value": "^4.0.1",
     "sexp_builder": "^1.6.10",
     "string-matching": "^1.11.5",
     "traverse-template": "^1.0.0",
-    "y18n": "^5.0.8",
-    "minimatch": "^3.0.5",
-    "request": "^2.88.0",
-    "json-schema": "^0.4.0"
+    "y18n": "^5.0.8"
   }
 }
